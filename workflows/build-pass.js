@@ -184,6 +184,12 @@ const failureText = (f) => {
 
 const has = (out, key, allowed) => Boolean(out) && typeof out === 'object' && allowed.includes(out[key])
 
+// The only way a check passes: a complete result that says `pass` and lists no
+// failures. A missing, malformed, partial or self-contradicting result is a
+// failed check, so a broken checker can never let a task through to review.
+const checkPassed = (out) =>
+  has(out, 'status', ['pass']) && (out.failures === undefined || (Array.isArray(out.failures) && out.failures.length === 0))
+
 // agent() resolves to null when the user skips it or the API fails for good,
 // and throws when the agent stalls or cannot produce its structured output.
 // Both end the task as ABORTED instead of dropping it from the summary.
@@ -192,7 +198,7 @@ const spawn = async (prompt, opts) => {
   spawned += 1
   try {
     const out = await agent(prompt, opts)
-    return out == null ? { gone: 'agent stopped or hit an unrecoverable API error' } : { out }
+    return out == null ? { gone: 'agent stopped or hit an unrecoverable API error', stopped: true } : { out }
   } catch (e) {
     return { gone: line(e && e.message ? e.message : e) }
   }
@@ -229,14 +235,23 @@ const build = async (task) => {
         schema: checkSchema,
         ...dials(roles.checker),
       })
-      if (check.gone) return row('ABORTED', attempt, { stage: 'check', reason: check.gone })
-      if (!has(check.out, 'status', ['pass', 'fail'])) {
-        return row('ABORTED', attempt, { stage: 'check', reason: 'checker returned no complete result' })
-      }
-      if (check.out.status === 'pass') return row('CHECKED', attempt, {})
+      // A null is the user stopping the agent (or an API failure that outlasted
+      // its retries): the task is ABORTED, not retried. Anything else that is not
+      // a clean pass is a failed check.
+      if (check.stopped) return row('ABORTED', attempt, { stage: 'check', reason: check.gone })
+      if (checkPassed(check.out)) return row('CHECKED', attempt, {})
 
-      const failures = Array.isArray(check.out.failures) ? check.out.failures : []
-      failure = failures.length > 0 ? failures.map(failureText) : ['check: failed, no detail reported']
+      const failures = check.out && Array.isArray(check.out.failures) ? check.out.failures : []
+      failure =
+        failures.length > 0
+          ? failures.map(failureText)
+          : [
+              check.gone
+                ? `check: the checker failed to run (${check.gone}). This counts as a failed check.`
+                : has(check.out, 'status', ['fail'])
+                  ? 'check: failed, no detail reported'
+                  : 'check: the checker returned no usable result. This counts as a failed check.',
+            ]
     }
 
     if (attempt < maxAttempts) {

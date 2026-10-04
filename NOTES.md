@@ -47,6 +47,11 @@ Other differences, not among the four:
 - `/lean:build` runs the two commands once in a fresh worktree before launching, and refuses to launch if they fail.
 - `scripts/validate.py` has 14 checks instead of 10, and a `--tasks FILE` mode that `/lean:brainstorm` uses on a task graph.
 
+## Hardening
+
+- **A checker result that is missing, malformed or partial is a failed check.** Only a complete result that says `pass` and lists no failures passes. Anything else, including a checker that throws or returns a contradictory `pass` with failures, is retried and escalated like any failed check, and is never reviewed or approved. One exception, deliberately kept from section 6.3 step 7: a `null` from the checker means the user stopped it, and the task is `ABORTED`, not retried.
+- **`/lean:build` warns when text follows the command.** The harness relays the session's triggering user request to workflow agents and tells them it outranks their computed task. Whether a given invocation is relayed was not established: in pass 1 the workers' transcripts show no relay block, and in the probe they did. The warning says "may".
+
 ## Undocumented internals (from the binary strings, 2.1.285)
 
 - `enableWorkflows` is a key in the settings schema ("Enable or disable the Workflows feature for this user. Unset = default by plan"). The `/config` row "Dynamic workflows" writes it. On Pro the default is off. `disableWorkflows: true` and `CLAUDE_CODE_DISABLE_WORKFLOWS` still disable the feature.

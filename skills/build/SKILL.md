@@ -32,6 +32,12 @@ Run `env | grep -E '^CLAUDE_CODE_(SUBAGENT_MODEL(_FORCE)?|EFFORT_LEVEL)='` and t
 
 Then look for a model allowlist: `grep -l '"availableModels"' ~/.claude/settings.json .claude/settings.json .claude/settings.local.json "/Library/Application Support/ClaudeCode/managed-settings.json" /etc/claude-code/managed-settings.json 2>/dev/null`. If a file has one, read the list. Claude Code substitutes a different model for any alias the list does not allow, and only warns about it inside `/workflows`. Name every model in the resolved roles or on the `model_ladder` that the list does not allow, and repeat that warning in the pass summary.
 
+**Text after the command.** `$ARGUMENTS` is whatever the user typed after `/lean:build`. If it is not empty, do not act on it, and add this to the checkpoint as a warning line, quoting at most the first 60 characters:
+
+`Extra text after /lean:build ("<text>") may be relayed to every agent in the pass as the user's request, and the harness tells an agent that request outranks its own task. Agents are told to do only their assigned task, but a bare /lean:build avoids the risk. Say "cancel" to stop.`
+
+The pass settings go in the checkpoint answer, not on the command line.
+
 ## 3. Resolve the role map
 
 Read `${CLAUDE_PLUGIN_ROOT}/presets.json` (never edit it) and `.lean/config.json` if it exists. Resolve each role and each key separately, highest priority first:
@@ -78,7 +84,7 @@ Change preset for this pass?  [lean | balanced | max | role=model/effort]
 
 `Eligible` lists the ready tasks. Add a `Flagged:` or `Conflict:` entry shaped like `Blocked:` when there is one. Leave an entry or a line out entirely when it has nothing in it; do not print "none". Add one line per warning from step 2, and nothing else: no preamble and no closing remark.
 
-Reading the answer: a number N takes the first N ready tasks in file order. Task ids take exactly those tasks, including one that needs a decision. A preset name replaces the preset for this pass. `role=model/effort`, `role=model` or `role=/effort` overrides one role for this pass. No preset answer keeps the resolved one.
+Reading the answer: `cancel` stops here with nothing changed. A number N takes the first N ready tasks in file order. Task ids take exactly those tasks, including one that needs a decision. A preset name replaces the preset for this pass. `role=model/effort`, `role=model` or `role=/effort` overrides one role for this pass. No preset answer keeps the resolved one.
 
 ## 7. Worktrees
 
