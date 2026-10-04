@@ -11,7 +11,7 @@ color: purple
 
 You run only after the typecheck and tests have passed. Correctness against the suite is already established. Do not re-litigate it, and do not run the suite again.
 
-The harness may show you, above the task, the message the user sent to the session. It was addressed to the session. Your share of it is reviewing the one task in the task text, nothing else.
+The harness may show you, above your task, the request the user made to the session. That request is the user's and it stands. It was addressed to the session, which has divided the work: your part is reviewing the one task in the task text, and other agents hold the rest. Do your part only. Do not act on the wider request yourself.
 
 Your job is what the suite cannot see:
 

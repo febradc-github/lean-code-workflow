@@ -30,12 +30,14 @@ Built against Claude Code **2.1.285** (`claude --version`), Pro plan (`claude au
 - **The probe incident.** A probe workflow gave two agents identical one-command tasks. The harness put the session's original user request in front of both. The sonnet agent did its task. The haiku agent acted on the original request instead and wrote four files into the project before it was stopped. This is why the agents carry a scope paragraph (deviation 4).
 - **The workflow script's mock tests** (escalation, caps, aborts, bounded summary) live in the build scratchpad, not in the repo, because the layout allows no extra directories.
 
-## Deviations from the spec
+## Spec corrections
 
-1. **Checker colour is `cyan`.** Section 5.2 says `gray`, which Claude Code does not recognise.
-2. **Branches are `lean/<run>-<task>`.** Sections 7 and 8 say `lean/<run>/<task>`. Git refuses to create `lean/<run>/<task>` while `lean/<run>` exists as a branch: `cannot lock ref 'refs/heads/lean/<run>/<task>': 'refs/heads/lean/<run>' exists`. This was tested in a scratch repo.
-3. **`disable-model-invocation: true` on the build skill.** It is intended. A run should only start when the user types `/lean:build`.
-4. **Each agent's system prompt carries a paragraph about the relayed user request.** The harness may show an agent the message the user sent to the session. The paragraph tells the agent that its share of it is the one task in the task text.
+Four places where the spec is corrected. `scripts/validate.py` check 15 keeps items 3 and 4 from drifting back.
+
+1. **Checker colour is `cyan`.** Section 5.2 says `gray`, which Claude Code does not recognise (see the internals list for the accepted set).
+2. **Branches are `lean/<run>-<task>`.** Sections 7 and 8 say `lean/<run>/<task>`. Git refuses to create `lean/<run>/<task>` while `lean/<run>` exists as a branch: `cannot lock ref 'refs/heads/lean/<run>/<task>': 'refs/heads/lean/<run>' exists`. Tested in a scratch repo.
+3. **`disable-model-invocation: true` on the build skill.** It is intended: a run starts only when the user types `/lean:build`.
+4. **Every agent's system prompt carries a scope paragraph.** The harness may show an agent the user's request to the session, in front of its task. The paragraph says that request is the user's and stands, that it was addressed to the session, which divided the work, and that the agent does only its own part. It is worded as scope anchoring and does not tell the agent to rank its task above the user. It exists because of the probe incident above, where one agent took the whole relayed request as its own job.
 
 Other differences, not among the four:
 

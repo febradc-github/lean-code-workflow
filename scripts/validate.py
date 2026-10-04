@@ -508,6 +508,25 @@ def check_model_ids():
     return problems
 
 
+def check_corrections():
+    """The spec corrections recorded in NOTES.md, kept from drifting back."""
+    problems = []
+    for stem in ROLES:
+        try:
+            body = read(f"agents/{stem}.md")
+        except FileNotFoundError:
+            continue
+        if "The harness may show you" not in body or "Do your part only" not in body:
+            problems.append(f"agents/{stem}.md: the scope paragraph about the relayed user request is missing")
+    try:
+        fields, _ = parse_frontmatter(read("skills/build/SKILL.md"))
+        if fields.get("disable-model-invocation") is not True:
+            problems.append("skills/build/SKILL.md: disable-model-invocation must be true")
+    except (FileNotFoundError, ValueError):
+        pass
+    return problems
+
+
 def validate_plugin():
     report = Report()
     manifest_problems, plugin = check_manifest()
@@ -530,6 +549,7 @@ def validate_plugin():
     report.check("12  agent defaults: aliases, turn limits, CLAUDE.md only for the worker", check_agent_settings(agents, presets))
     report.check("13  skills are brainstorm and build, each with name and description", check_skills())
     report.check("14  no full model ID in any shipped file", check_model_ids())
+    report.check("15  scope paragraph in every agent; build skill not model-invocable", check_corrections())
 
     print()
     print("validate.py: OK" if report.failures == 0 else f"validate.py: {report.failures} check(s) failed")
