@@ -47,6 +47,24 @@ Other differences, not among the four:
 - `/lean:build` runs the two commands once in a fresh worktree before launching, and refuses to launch if they fail.
 - `scripts/validate.py` has 14 checks instead of 10, and a `--tasks FILE` mode that `/lean:brainstorm` uses on a task graph.
 
+## Fixture: escalate-then-approved was not observed
+
+Step 5 asked for a task that fails its typecheck on `sonnet/low` and passes on `sonnet/medium`. It did not happen. Across seven real passes on the `lean` preset, four T2 designs all passed on the first attempt, and the worker was never seen to skip the compiler's own configuration:
+
+- a logger task with `erasableSyntaxOnly`, `verbatimModuleSyntax`, `exactOptionalPropertyTypes` and `noUncheckedIndexedAccess` in play (one pass);
+- duration helpers under `isolatedDeclarations`, where several exports need explicit return types (four passes);
+- the same task with a convention script chained into `npm run typecheck`: the worker read `package.json`, followed it to `scripts/check.mjs`, and satisfied the rule before writing (one pass);
+- eleven generic collection helpers under `noPropertyAccessFromIndexSignature`, `noUnusedLocals`, `noUnusedParameters` and the flags above (one pass).
+
+In every run the worker's first command read `package.json` and `tsconfig.json`, and it read whatever script `package.json` called. A trap it can see in those files gets handled. I also checked that Node 26 puts a plain space, not U+202F, in `Intl` short times, which ruled out a runtime-only trap I had in mind.
+
+What escalation evidence exists:
+
+- **Real agents, effort step.** In pass 2 of the first fixture run, T3's first worker ran `sonnet/low`, the check failed, and the second worker ran `sonnet/medium` (recorded in the agent transcripts). That task is impossible by construction and ended `BLOCKED` because the worker reported `blocked` on attempt 2, so it did not end approved.
+- **Mock agents, the full ladder.** The scratch mock suite covers low to medium to opus, the caps at the top of both ladders, and approval on attempt 2.
+
+Two process notes: a fixture edit committed while the fixture sat on a pass's integration branch was lost when `reset.sh` deleted that branch, so three of the six step-5 passes re-ran an earlier design than intended. They were repeated, and the results above are the corrected count.
+
 ## Hardening
 
 - **A checker result that is missing, malformed or partial is a failed check.** Only a complete result that says `pass` and lists no failures passes. Anything else, including a checker that throws or returns a contradictory `pass` with failures, is retried and escalated like any failed check, and is never reviewed or approved. One exception, deliberately kept from section 6.3 step 7: a `null` from the checker means the user stopped it, and the task is `ABORTED`, not retried.
