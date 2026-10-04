@@ -1,0 +1,9 @@
+# Local run state: plans, task graphs, and worktrees. Not repository content.
+.lean/
+
+# macOS
+.DS_Store
+
+# Python (scripts/validate.py)
+__pycache__/
+*.pyc

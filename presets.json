@@ -1,0 +1,25 @@
+{
+  "default": "balanced",
+  "presets": {
+    "lean": {
+      "worker":   { "model": "sonnet", "effort": "low" },
+      "checker":  { "model": "haiku" },
+      "reviewer": { "model": "sonnet", "effort": "low" }
+    },
+    "balanced": {
+      "worker":   { "model": "sonnet", "effort": "medium" },
+      "checker":  { "model": "haiku" },
+      "reviewer": { "model": "sonnet", "effort": "medium" }
+    },
+    "max": {
+      "worker":   { "model": "opus", "effort": "high" },
+      "checker":  { "model": "haiku" },
+      "reviewer": { "model": "opus", "effort": "high" }
+    }
+  },
+  "escalation": {
+    "effort_ladder": ["low", "medium", "high", "xhigh"],
+    "model_ladder": ["haiku", "sonnet", "opus"],
+    "max_attempts": 3
+  }
+}

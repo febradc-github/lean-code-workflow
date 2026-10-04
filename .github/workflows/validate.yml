@@ -1,0 +1,33 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate plugin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # No dependencies by design: the validator runs on a bare interpreter.
+      - name: Check plugin invariants
+        run: python3 scripts/validate.py
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # `claude plugin validate` on a directory needs Claude Code v2.1.233 or later.
+      # It reads local files only, so it needs no login.
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Validate with Claude Code
+        run: claude plugin validate .
